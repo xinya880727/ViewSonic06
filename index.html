@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>AR 魔法融合：火 + 水 = 蒸氣</title>
+    
+    <!-- 引入 A-Frame 框架 -->
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <!-- 引入 AR.js (用於 WebAR) -->
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+
+    <style>
+      body { margin: 0; overflow: hidden; font-family: 'Microsoft JhengHei', sans-serif; }
+      
+      /* UI 介面層 */
+      #ui-layer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none; /* 讓點擊穿透到 3D 場景 */
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 20px;
+        box-sizing: border-box;
+      }
+
+      .status-bar {
+        background: rgba(0, 0, 0, 0.6);
+        color: white;
+        padding: 15px;
+        border-radius: 10px;
+        text-align: center;
+        backdrop-filter: blur(5px);
+      }
+
+      h1 { margin: 0; font-size: 1.2rem; color: #FFD700; }
+      p { margin: 5px 0 0; font-size: 0.9rem; }
+      
+      #fusion-alert {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(255, 255, 255, 0.9);
+        color: #333;
+        padding: 20px 40px;
+        border-radius: 50px;
+        font-weight: bold;
+        font-size: 1.5rem;
+        display: none; /* 預設隱藏 */
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+        border: 2px solid #333;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- UI 顯示層 -->
+    <div id="ui-layer">
+      <div class="status-bar">
+        <h1>煉金術實驗室</h1>
+        <p id="debug-text">請掃描 Hiro (火) 與 Kanji (水) 卡片</p>
+      </div>
+      <div id="fusion-alert">✨ 蒸氣融合成功！ ✨</div>
+    </div>
+
+    <!-- AR 場景 -->
+    <!-- embedded: 嵌入網頁, arjs: 設定 webcam 來源與除錯模式關閉 -->
+    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;">
+      
+      <!-- 定義素材 (Assets) -->
+      <a-assets>
+        <!-- 火焰材質模型 -->
+        <a-mixin id="fire-style" 
+          geometry="primitive: octahedron" 
+          material="color: #FF4500; opacity: 0.9; emissive: #FF0000; emissiveIntensity: 0.5"
+          animation="property: rotation; to: 0 360 0; loop: true; dur: 2000; easing: linear">
+        </a-mixin>
+
+        <!-- 水滴材質模型 -->
+        <a-mixin id="water-style" 
+          geometry="primitive: icosahedron; detail: 1" 
+          material="color: #00BFFF; opacity: 0.8; metalness: 0.8; roughness: 0.2"
+          animation="property: position; dir: alternate; to: 0 0.8 0; loop: true; dur: 1500; easing: easeInOutSine">
+        </a-mixin>
+      </a-assets>
+
+      <!-- === Marker 1: 火 (使用 Hiro 標記) === -->
+      <a-marker type="pattern" preset="hiro" id="marker-fire">
+        <!-- 火焰容器 -->
+        <a-entity id="visual-fire">
+            <a-entity mixin="fire-style" scale="0.5 0.5 0.5" position="0 0.5 0"></a-entity>
+            <a-entity mixin="fire-style" scale="0.3 0.8 0.3" position="0 0.5 0" material="opacity: 0.5" animation="dur: 1500"></a-entity>
+            <a-text value="FIRE" color="red" align="center" position="0 1.2 0" scale="2 2 2" side="double"></a-text>
+        </a-entity>
+      </a-marker>
+
+      <!-- === Marker 2: 水 (使用 Kanji 標記) === -->
+      <a-marker type="pattern" preset="kanji" id="marker-water">
+        <!-- 水滴容器 -->
+        <a-entity id="visual-water">
+            <a-entity mixin="water-style" scale="0.5 0.5 0.5" position="0 0.5 0"></a-entity>
+            <a-ring color="#00BFFF" radius-inner="0.6" radius-outer="0.65" rotation="-90 0 0" position="0 0.2 0" opacity="0.5"></a-ring>
+            <a-text value="WATER" color="cyan" align="center" position="0 1.2 0" scale="2 2 2" side="double"></a-text>
+        </a-entity>
+      </a-marker>
+
+      <!-- === 融合產物：蒸氣 (獨立存在於世界座標) === -->
+      <a-entity id="visual-steam" visible="false">
+        <!-- 中心雲團 -->
+        <a-sphere color="white" opacity="0.4" radius="0.4" position="0 0 0" 
+                  animation="property: scale; dir: alternate; dur: 1000; loop: true; to: 1.1 1.1 1.1"></a-sphere>
+        <!-- 周圍的小雲朵 -->
+        <a-sphere color="#EEE" opacity="0.3" radius="0.25" position="0.3 0.3 0" 
+                  animation="property: position; to: 0.4 0.5 0; dir: alternate; loop: true; dur: 1200"></a-sphere>
+        <a-sphere color="#EEE" opacity="0.3" radius="0.3" position="-0.3 0.2 0.2" 
+                  animation="property: position; to: -0.4 0.4 0.3; dir: alternate; loop: true; dur: 1400"></a-sphere>
+        
+        <!-- 向上飄動的文字 -->
+        <a-text value="STEAM" color="white" align="center" position="0 0.8 0" scale="3 3 3" side="double"></a-text>
+      </a-entity>
+
+      <!-- 攝影機 -->
+      <a-entity camera></a-entity>
+      
+      <!-- 邏輯控制器 (不可見) -->
+      <a-entity fusion-controller></a-entity>
+
+    </a-scene>
+
+    <!-- === JavaScript 邏輯程式碼 === -->
+    <script>
+      AFRAME.registerComponent('fusion-controller', {
+        init: function () {
+          // 取得 DOM 元素
+          this.mFire = document.querySelector('#marker-fire');
+          this.mWater = document.querySelector('#marker-water');
+          
+          this.vFire = document.querySelector('#visual-fire');
+          this.vWater = document.querySelector('#visual-water');
+          this.vSteam = document.querySelector('#visual-steam');
+          
+          this.debugText = document.querySelector('#debug-text');
+          this.fusionAlert = document.querySelector('#fusion-alert');
+
+          // 設定融合距離閾值 (單位: 公尺)
+          // AR.js 的單位大約對應真實世界的公尺，這裡設定 2.0 代表兩個標記相當靠近時
+          this.threshold = 2.0;
+        },
+
+        tick: function () {
+          // 檢查標記是否被攝影機追蹤到
+          // 注意：object3D.visible 是 three.js 的屬性，代表 AR 系統是否正在渲染它
+          const fireVisible = this.mFire.object3D.visible;
+          const waterVisible = this.mWater.object3D.visible;
+
+          if (fireVisible && waterVisible) {
+            // === 兩張卡片都出現 ===
+            
+            // 1. 取得兩張卡片的世界座標
+            let pFire = new THREE.Vector3();
+            let pWater = new THREE.Vector3();
+            this.mFire.object3D.getWorldPosition(pFire);
+            this.mWater.object3D.getWorldPosition(pWater);
+
+            // 2. 計算距離
+            let distance = pFire.distanceTo(pWater);
+
+            // 顯示距離用於除錯 (可選)
+            this.debugText.innerText = `元素距離: ${distance.toFixed(2)}`;
+
+            if (distance < this.threshold) {
+              // === 觸發融合 ===
+              this.showSteam(pFire, pWater);
+            } else {
+              // === 距離太遠，顯示各自元素 ===
+              this.showElements();
+            }
+
+          } else {
+            // === 少於兩張卡片 ===
+            this.hideSteam();
+            
+            // 更新狀態文字
+            if (fireVisible) this.debugText.innerText = "偵測到：火元素";
+            else if (waterVisible) this.debugText.innerText = "偵測到：水元素";
+            else this.debugText.innerText = "請掃描卡片...";
+            
+            // 確保原本的元素是可見的 (如果標記被追蹤到的話)
+            this.vFire.setAttribute('visible', true);
+            this.vWater.setAttribute('visible', true);
+          }
+        },
+
+        showSteam: function (posA, posB) {
+          // 隱藏原始元素
+          this.vFire.setAttribute('visible', false);
+          this.vWater.setAttribute('visible', false);
+
+          // 顯示蒸氣
+          this.vSteam.setAttribute('visible', true);
+          this.fusionAlert.style.display = 'block';
+
+          // 計算中間點
+          let midPoint = new THREE.Vector3().addVectors(posA, posB).multiplyScalar(0.5);
+          
+          // 將蒸氣移到中間點
+          this.vSteam.object3D.position.copy(midPoint);
+        },
+
+        showElements: function () {
+          // 顯示原始元素
+          this.vFire.setAttribute('visible', true);
+          this.vWater.setAttribute('visible', true);
+
+          // 隱藏蒸氣
+          this.hideSteam();
+        },
+
+        hideSteam: function() {
+          this.vSteam.setAttribute('visible', false);
+          this.fusionAlert.style.display = 'none';
+        }
+      });
+    </script>
+  </body>
+</html>
