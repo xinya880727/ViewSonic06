@@ -64,13 +64,12 @@
     <div id="ui-layer">
       <div class="status-bar">
         <h1>煉金術實驗室</h1>
-        <p id="debug-text">請掃描 Hiro (火) 與 Kanji (水) 卡片</p>
+        <p id="debug-text">請掃描卡片 (預設: Hiro/Kanji)</p>
       </div>
       <div id="fusion-alert">✨ 蒸氣融合成功！ ✨</div>
     </div>
 
     <!-- AR 場景 -->
-    <!-- embedded: 嵌入網頁, arjs: 設定 webcam 來源與除錯模式關閉 -->
     <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;">
       
       <!-- 定義素材 (Assets) -->
@@ -90,7 +89,14 @@
         </a-mixin>
       </a-assets>
 
-      <!-- === Marker 1: 火 (使用 Hiro 標記) === -->
+      <!-- === Marker 1: 火 === -->
+      <!-- 
+           使用教學：若要替換成自訂圖片
+           1. 前往 https://ar-js-org.github.io/AR.js/three.js/examples/marker-training/examples/generator.html 上傳圖片並下載 .patt 檔
+           2. 將 preset="hiro" 移除
+           3. 加入 url="你的檔案名稱.patt"
+           範例: <a-marker type="pattern" url="pattern-fire.patt" id="marker-fire">
+      -->
       <a-marker type="pattern" preset="hiro" id="marker-fire">
         <!-- 火焰容器 -->
         <a-entity id="visual-fire">
@@ -100,7 +106,11 @@
         </a-entity>
       </a-marker>
 
-      <!-- === Marker 2: 水 (使用 Kanji 標記) === -->
+      <!-- === Marker 2: 水 === -->
+      <!-- 
+           使用教學：若要替換成自訂圖片，請改為：
+           <a-marker type="pattern" url="pattern-water.patt" id="marker-water">
+      -->
       <a-marker type="pattern" preset="kanji" id="marker-water">
         <!-- 水滴容器 -->
         <a-entity id="visual-water">
